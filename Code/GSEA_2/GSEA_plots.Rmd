@@ -35,7 +35,7 @@ set.seed(12345)
 
 # Overview
 
-This is data from a stomach corpus samples of mouse experiments (Rspo KI with infection vs controls) hybridized as dual channel libraries to Agilent 074809 (SurePrint G3 Mouse GE v2 8x60K) micro arrays. 
+This is data from a stomach corpus samples of mouse experiments (Rspo KI/KO with/without infection vs controls) hybridized as dual channel libraries to Agilent 074809 (SurePrint G3 Mouse GE v2 8x60K) micro arrays or Agilent 014568 micro arrays. 
 
 For analysis, a preranked analysis using the R package fGSEA was used that should give similar results to preranked analysis in standard GSEA. 
 
@@ -97,8 +97,7 @@ for (sel_comparison in names(all_results)) {
   # tmp2 = merge(tmp, mouse_to_human, by="GeneSymbol")
   # tmp2 = subset(tmp2, !is.na(symbol_1))
   ranks_mouse = unlist(tapply(tmp$t, tmp$GeneSymbol, function(x) x[which(abs(x)==max(abs(x)))] ))
-  tmp =  # those are mostly control probes
-  
+
   tmp2 = merge(subset(tmp, !is.na(GeneSymbol)), mouse_to_human, by="GeneSymbol")
   tmp2 = subset(tmp2, !is.na(symbol_1))
   ranks_human = unlist(tapply(tmp2$t, tmp2$symbol_1, function(x) x[which(abs(x)==max(abs(x)))] ))
@@ -135,7 +134,15 @@ All plots have been exported to corresponding files in PDF format in folder `r r
 ```{r}
 for (sel_comparison in names(all_results)) {
   for (g in selected_genesets) {
-     rr = subset(all_gsea_results[[sel_comparison]], pathway==g)
+    tmp = all_results[[sel_comparison]]
+
+    ranks_mouse = unlist(tapply(tmp$t, tmp$GeneSymbol, function(x) x[which(abs(x)==max(abs(x)))] ))
+
+    tmp2 = merge(subset(tmp, !is.na(GeneSymbol)), mouse_to_human, by="GeneSymbol")
+    tmp2 = subset(tmp2, !is.na(symbol_1))
+    ranks_human = unlist(tapply(tmp2$t, tmp2$symbol_1, function(x) x[which(abs(x)==max(abs(x)))] ))
+    
+    rr = subset(all_gsea_results[[sel_comparison]], pathway==g)
       loc = unlist(lapply(gset_collections_human, function(x) grep(paste0("^",g,"$"), names(x) )))
       if(length(loc)>0) {
         sel_genes = unlist(gset_collections_human[[names(loc)]][loc])
@@ -145,7 +152,7 @@ for (sel_comparison in names(all_results)) {
         sel_genes = unlist(gset_collections_mouse[[names(loc)]][loc])
         ranks = ranks_mouse
   
-      }
+    }
     p = myPlotEnrichment_pdf(sel_genes, ranks, linewidth = 2)
     pdf(file=file.path(result_folder, paste0(sel_comparison,"_",g, ".pdf")), width=8, height = 6)
     print(p + ggtitle(g, paste("FDR=",prettyNum(rr$FDR_global, digits=2),", p=",prettyNum(rr$pval, digits=2), ", ES=",prettyNum(rr$ES, digits=2), ", NES=",prettyNum(rr$NES, digits=2) ) ) )
